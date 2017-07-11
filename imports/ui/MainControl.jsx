@@ -1,6 +1,6 @@
 import React, { Component,PropTypes } from 'react';
 import ReactIntl,{IntlProvider} from 'react-intl';
-
+import {Email} from 'meteor/email';
 var FormattedRelative = ReactIntl.FormattedRelative;
 import ReactDOM from 'react-dom';
 
@@ -18,25 +18,41 @@ export default class MainControl extends Component {
     super(props);
     this.i = 0;
     this.state = {
-        mapPoints:[]
+        mapPoints:[],
+        zoomLevel:[0],
+        center:[ -0.2416815, 51.5285582 ]
 
     };
   }
 
-  clusterMarker(coordinates,key){ return(
-    <Marker coordinates={coordinates} key={key}>
-      <img src={'images/vewsPoint.png'} height={'20'} width={'20'}/>
-  </Marker>
-  );
-  }
 
   componentDidMount(){
     Meteor.call('getAllPoints', this.getPointsCallback.bind(this));
+
   }
 
   getPointsCallback(error,data){
     console.log(data);
-    this.setState({'mapPoints':data})
+    var url_string = window.location.href;
+    var parseObj = this.parseURL(url_string);
+    var vid = parseObj.vid;
+
+
+    if(vid != null){
+      var len = data.length;
+      for(let i = 0; i < len; i++){
+        if(data[i]._id == vid){
+          this.setState({'mapPoints': [data[i]],
+          'center':data[i].location.coordinates,
+          'zoomLevel':[11]
+        });
+          return;
+        }
+      }}
+
+
+    this.setState({'mapPoints':data});
+
   }
 
   render() {
@@ -44,52 +60,84 @@ export default class MainControl extends Component {
     // Give tasks a different className when they are checked off,
     // so that we can style them nicely in CSS
       return (
-        <div className='container center'>
+        <div className=' center'>
         <h1>Vew the world.</h1>
+
+        <div style={{
+          marginTop:'25px',
+          marginBottom:'25px'
+
+
+
+        }}>
+        <a href="https://itunes.apple.com/us/app/vew/id1153935071?ls=1&mt=8">
+        <img className='appleLink' src={'images/appstore.svg'}></img>
+        </a>
+        </div>
+
           <div className='row black'>
-            <div className='black'>
+
 
             <Map
               attributionControl={false}
             style="mapbox://styles/mapbox/satellite-v9"
-            zoom={[0]}
+            zoom={this.state.zoomLevel}
+            center={this.state.center}
             containerStyle={{
-              height: "70vh",
-              width: "70vh",
-              marginLeft:'auto',
-              marginRight:'auto',
-              border: 'solid',
-              borderRadius:'20px',
-              borderWidth:'10px',
-              borderColor:'#7d70e8'
+              height: "75vh",
+              width: "100vw",
+              marginLeft:'0px',
+              marginRight:'0px',
+              position:'absolute',
+
+              right:'0vw'
 
             }}>
-          <Cluster ClusterMarkerFactory={this.clusterMarker}>
+
               {
             this.state.mapPoints.map((feature, key) =>
               <Marker
                 key={key}
                 coordinates={feature.location.coordinates}
               >
-                <img src={'images/vewsPoint.png'} height={'20px'} width={'20px'}/>
+                <img className={'diamond'} src={'images/vewsPoint.png'} height={'20px'} width={'20px'}/>
               </Marker>
             )
             }
-          </Cluster>
+
           </Map>
 
 
-        </div>
-      </div>
-      <div style={{
-        padding:'20px'
 
-      }}>
-      <img src={'images/appstore.svg'}></img>
       </div>
+
+
 
     </div>
     )
 
 }
+
+  parseURL(query) {
+  var vars = query.split("&");
+  var query_string = {};
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split("=");
+    // If first entry with this name
+    if (typeof query_string[pair[0]] === "undefined") {
+      query_string[pair[0]] = decodeURIComponent(pair[1]);
+      // If second entry with this name
+    } else if (typeof query_string[pair[0]] === "string") {
+      var arr = [query_string[pair[0]], decodeURIComponent(pair[1])];
+      query_string[pair[0]] = arr;
+      // If third or later entry with this name
+    } else {
+      query_string[pair[0]].push(decodeURIComponent(pair[1]));
+    }
+  }
+  return query_string;
+}
+
+
+
 }

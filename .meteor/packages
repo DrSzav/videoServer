@@ -21,3 +21,6 @@ random@1.0.10
 shell-server@0.2.3
 dynamic-import
 twbs:bootstrap
+accounts-password
+accounts-ui
+email
